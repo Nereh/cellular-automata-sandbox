@@ -132,16 +132,6 @@ impl Automata {
         }
     }
 
-    fn randomize_next(&mut self) {
-        for c in self.cells_next.iter_mut() {
-            *c = if self.rng.gen_bool(self.spawn_chance as f64) {
-                1
-            } else {
-                0
-            };
-        }
-    }
-
     fn get_neighborhood_hash(&mut self, x: usize, y: usize) -> u64 {
         self.neighborhood_offsets
             .iter()
@@ -194,13 +184,7 @@ impl Game {
         texture.set_filter(FilterMode::Nearest);
 
         let mut game = Self {
-            automata: Automata::new(
-                grid_w,
-                grid_h,
-                neighborhood_w,
-                neighborhood_h,
-                spawn_chance,
-            ),
+            automata: Automata::new(grid_w, grid_h, neighborhood_w, neighborhood_h, spawn_chance),
             image,
             texture,
             paused: false,
@@ -247,10 +231,6 @@ impl Game {
             .collect();
         self.add_history();
         self.time_since_last_step = 0.0;
-    }
-
-    fn randomize(&mut self) {
-        self.automata.randomize();
     }
 
     fn update_texture(&mut self) {
@@ -342,7 +322,11 @@ impl Game {
                 .unwrap_or(fallback)
         };
         let parse_f32 = |s: &str, fallback: f32| -> f32 {
-            s.trim().parse::<f32>().ok().map(|v| v.clamp(0.0, 1.0)).unwrap_or(fallback)
+            s.trim()
+                .parse::<f32>()
+                .ok()
+                .map(|v| v.clamp(0.0, 1.0))
+                .unwrap_or(fallback)
         };
 
         let new_w = parse(&self.input_grid_w, self.grid_w);
@@ -487,7 +471,11 @@ impl Game {
             "Step: {:.3}s (Up/Down to adjust) | {} | View: {}",
             self.step_time,
             if self.paused { "Paused" } else { "Running" },
-            if self.show_history { "History" } else { "Current" }
+            if self.show_history {
+                "History"
+            } else {
+                "Current"
+            }
         );
         draw_text(&info, 12.0, 24.0, 20.0, LIGHTGRAY);
     }

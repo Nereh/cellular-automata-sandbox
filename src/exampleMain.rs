@@ -1,6 +1,8 @@
+// THIS FILE WAS COMLPETELY CODEX SO I COULD SEE WHAT RUST LOOKS LIKE
+
 #![deny(non_snake_case)]
-use macroquad::prelude::*;
 use ::rand::{rngs::SmallRng, Rng, SeedableRng};
+use macroquad::prelude::*;
 
 const GRID_W: usize = 256;
 const GRID_H: usize = 144;
