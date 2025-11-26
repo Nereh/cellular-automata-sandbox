@@ -1,6 +1,7 @@
 #![deny(non_snake_case)]
 use ::rand::{rngs::SmallRng, Rng, SeedableRng};
 use macroquad::prelude::*;
+use macroquad::ui::{hash, root_ui};
 use std::collections::{HashMap, VecDeque};
 
 const GRID_W: usize = 16;
@@ -8,6 +9,7 @@ const GRID_H: usize = 1;
 const HISTORY_LENGTH: usize = 16;
 const NEIGHBORHOOD_W: usize = 3;
 const NEIGHBORHOOD_H: usize = 3;
+const MAX_NEIGHBORHOOD_BITS: usize = 16; // 2^16 = 65_536 combinations
 
 #[derive(Clone)]
 struct RulesCollection {
@@ -23,7 +25,10 @@ impl RulesCollection {
 
     fn randomize(&mut self, neighborhood_w: usize, neighborhood_h: usize, rng: &mut SmallRng) {
         let bits = neighborhood_w * neighborhood_h;
-        assert!(bits <= 64, "neighborhood too big for u64 hash");
+        assert!(
+            bits <= MAX_NEIGHBORHOOD_BITS,
+            "neighborhood too big for u64 hash"
+        );
 
         let total_patterns: u128 = 1u128 << bits;
 
@@ -146,6 +151,13 @@ struct Game {
     history_length: usize,
     grid_w: usize,
     grid_h: usize,
+    neighborhood_w: usize,
+    neighborhood_h: usize,
+    input_grid_w: String,
+    input_grid_h: String,
+    input_neighborhood_w: String,
+    input_neighborhood_h: String,
+    input_history_length: String,
 }
 
 impl Game {
@@ -171,6 +183,13 @@ impl Game {
             history_length,
             grid_w,
             grid_h,
+            neighborhood_w,
+            neighborhood_h,
+            input_grid_w: grid_w.to_string(),
+            input_grid_h: grid_h.to_string(),
+            input_neighborhood_w: neighborhood_w.to_string(),
+            input_neighborhood_h: neighborhood_h.to_string(),
+            input_history_length: history_length.to_string(),
         };
         game.init();
         game
@@ -193,7 +212,9 @@ impl Game {
     fn reset(&mut self) {
         self.automata.randomize_rules();
         self.automata.randomize();
-        self.cells_history.clear();
+        self.cells_history = (0..self.history_length)
+            .map(|_| vec![0u8; self.grid_w * self.grid_h])
+            .collect();
         self.add_history();
         self.time_since_last_step = 0.0;
     }
@@ -218,6 +239,121 @@ impl Game {
         self.texture.update(&self.image);
     }
 
+    fn clamp_neighborhood_to_limit(&self, mut w: usize, mut h: usize) -> (usize, usize) {
+        let max_bits: usize = MAX_NEIGHBORHOOD_BITS; // 2^bits combinations
+        w = w.max(1);
+        h = h.max(1);
+        if w * h <= max_bits {
+            return (w, h);
+        }
+        // shrink the larger dimension until the area fits.
+        while w * h > max_bits {
+            if w >= h && w > 1 {
+                w -= 1;
+            } else if h > 1 {
+                h -= 1;
+            } else {
+                break;
+            }
+        }
+        (w, h)
+    }
+
+    fn rebuild(
+        &mut self,
+        grid_w: usize,
+        grid_h: usize,
+        history_length: usize,
+        neighborhood_w: usize,
+        neighborhood_h: usize,
+    ) {
+        self.grid_w = grid_w.max(1);
+        self.grid_h = grid_h.max(1);
+        self.history_length = history_length.max(1);
+        let (neighborhood_w, neighborhood_h) =
+            self.clamp_neighborhood_to_limit(neighborhood_w, neighborhood_h);
+        self.neighborhood_w = neighborhood_w;
+        self.neighborhood_h = neighborhood_h;
+
+        self.automata = Automata::new(self.grid_w, self.grid_h, neighborhood_w, neighborhood_h);
+
+        self.image = Image::gen_image_color(
+            self.grid_w as u16,
+            (self.grid_h * self.history_length) as u16,
+            BLACK,
+        );
+        self.texture = Texture2D::from_image(&self.image);
+        self.texture.set_filter(FilterMode::Nearest);
+
+        self.reset();
+
+        self.input_grid_w = self.grid_w.to_string();
+        self.input_grid_h = self.grid_h.to_string();
+        self.input_neighborhood_w = self.neighborhood_w.to_string();
+        self.input_neighborhood_h = self.neighborhood_h.to_string();
+        self.input_history_length = self.history_length.to_string();
+    }
+
+    fn apply_inputs(&mut self) {
+        let parse = |s: &str, fallback: usize| -> usize {
+            s.trim()
+                .parse::<usize>()
+                .ok()
+                .filter(|v| *v > 0)
+                .unwrap_or(fallback)
+        };
+
+        let new_w = parse(&self.input_grid_w, self.grid_w);
+        let new_h = parse(&self.input_grid_h, self.grid_h);
+        let new_neighborhood_w = parse(&self.input_neighborhood_w, self.neighborhood_w);
+        let new_neighborhood_h = parse(&self.input_neighborhood_h, self.neighborhood_h);
+        let new_history_length = parse(&self.input_history_length, self.history_length);
+
+        self.rebuild(
+            new_w,
+            new_h,
+            new_history_length,
+            new_neighborhood_w,
+            new_neighborhood_h,
+        );
+    }
+
+    fn draw_ui(&mut self) {
+        let padding_y = 36.0;
+        let width = 260.0;
+        root_ui().window(
+            hash!("controls"),
+            vec2(12.0, padding_y),
+            vec2(width, 240.0),
+            |ui| {
+                ui.label(None, "Board width");
+                ui.input_text(hash!("grid_w"), "", &mut self.input_grid_w);
+                ui.label(None, "Board height");
+                ui.input_text(hash!("grid_h"), "", &mut self.input_grid_h);
+                ui.label(None, "Neighborhood width");
+                ui.input_text(hash!("nb_w"), "", &mut self.input_neighborhood_w);
+                ui.label(None, "Neighborhood height");
+                ui.input_text(hash!("nb_h"), "", &mut self.input_neighborhood_h);
+                ui.label(None, "History length");
+                ui.input_text(hash!("hist"), "", &mut self.input_history_length);
+
+                if ui.button(None, "Apply (rebuild)") {
+                    self.apply_inputs();
+                }
+            },
+        );
+        self.sanitize_inputs();
+    }
+
+    fn sanitize_inputs(&mut self) {
+        let only_digits = |s: &mut String| s.retain(|c| c.is_ascii_digit());
+        only_digits(&mut self.input_grid_w);
+        only_digits(&mut self.input_grid_h);
+        only_digits(&mut self.input_neighborhood_w);
+        only_digits(&mut self.input_neighborhood_h);
+        only_digits(&mut self.input_history_length);
+    }
+
     fn handle_input(&mut self) {
         let adjust = 0.005f32;
         if is_key_pressed(KeyCode::Space) {
@@ -231,6 +367,9 @@ impl Game {
         }
         if is_key_pressed(KeyCode::R) {
             self.reset();
+        }
+        if is_key_pressed(KeyCode::Enter) {
+            self.apply_inputs();
         }
     }
 
@@ -247,6 +386,7 @@ impl Game {
 
     fn draw(&mut self) {
         self.update_texture();
+        self.draw_ui();
 
         clear_background(Color::from_rgba(12, 18, 28, 255));
 

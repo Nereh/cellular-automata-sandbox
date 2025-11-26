@@ -1,46 +1,29 @@
-# Cellular Automata Scaffold
+# Cellular Automata (Rust + macroquad)
 
-Two starter tracks are available:
-- Rust + macroquad (current)
-- C++20 + CUDA + raylib (original scaffold) still lives in `CMakeLists.txt`, `src/main.cpp`, `src/kernels.cu`.
+Interactive 2D automata sandbox written in Rust using `macroquad`. You can tweak the board size, neighborhood size, and history depth at runtime, and regenerate states/rules on demand.
 
-## Rust (macroquad)
-Prerequisites:
+## Prerequisites
 - Rust toolchain (`rustup` recommended)
 
-Run (debug):
+## Run
 ```bash
 cargo run
 ```
 
-What it does:
-- Opens a window via macroquad.
-- Runs a CPU Game of Life stepper on a 256x144 grid.
-- Updates a texture each frame and scales it to the window; simple controls are shown.
+## Controls
+- Space: pause/resume stepping
+- Up/Down: speed up / slow down step time
+- R: full reset (randomize rules and state, clear history)
+- Enter: apply UI inputs (same as the Apply button)
 
-Controls:
-- `Space`: pause/resume
-- `R`: randomize the grid
+### UI Inputs (top-left)
+- Board width / height
+- Neighborhood width / height (clamped so `width * height <= 16`, i.e. <= 65,536 combinations)
+- History length (number of past rows shown)
+- Apply (rebuild): rebuilds automata, texture, and history with the entered values
 
-Where to extend:
-- `src/main.rs`: automata logic, rendering, input. Replace CPU stepping with GPU compute or change grid/visuals.
+## Code map
+- `src/main.rs`: all game/automata logic, UI, rendering, and input handling.
 
-## C++ (CUDA + raylib)
-Prerequisites:
-- CUDA toolkit (nvcc + cudart)
-- CMake 3.24+
-- C++20 compiler
-- raylib 5.0+ (or let CMake fetch it if network is allowed)
-
-Build:
-```bash
-mkdir -p build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build .
-./ca_app
-```
-
-Notes:
-- If CMake cannot find raylib, it will attempt to fetch from GitHub (requires network).
-- CUDA sample kernel increments a small buffer and reports success in the window; check stderr if it fails.
+## Notes
+- Currently, we generate a unique output for every possible neighborhood combination. This can explode rather quickly so be careful getting this too high
