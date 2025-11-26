@@ -15,11 +15,13 @@ cargo run
 - Up/Down: speed up / slow down step time
 - R: full reset (randomize rules and state, clear history)
 - Enter: apply UI inputs (same as the Apply button)
+- H: toggle between full history view and current board only
 
 ### UI Inputs (top-left)
 - Board width / height
 - Neighborhood width / height (clamped so `width * height <= 16`, i.e. <= 65,536 combinations)
 - History length (number of past rows shown)
+- Spawn chance (0-1) for initial/randomized cells
 - Apply (rebuild): rebuilds automata, texture, and history with the entered values
 
 ## Code map
@@ -27,3 +29,6 @@ cargo run
 
 ## Notes
 - Currently, we generate a unique output for every possible neighborhood combination. This can explode rather quickly so be careful getting this too high
+
+## Future Features
+- Allow user to create their own rules
