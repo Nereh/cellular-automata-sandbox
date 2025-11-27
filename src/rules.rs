@@ -6,17 +6,32 @@ use crate::config::MAX_NEIGHBORHOOD_BITS;
 #[derive(Clone)]
 pub struct RulesCollection {
     hash_map: HashMap<u64, u8>,
+    neighborhood_w: usize,
+    neighborhood_h: usize,
 }
 
 impl RulesCollection {
-    pub fn new() -> Self {
+    pub fn new(neighborhood_w: usize, neighborhood_h: usize) -> Self {
         Self {
             hash_map: HashMap::new(),
+            neighborhood_w,
+            neighborhood_h,
         }
     }
 
-    pub fn randomize(&mut self, neighborhood_w: usize, neighborhood_h: usize, rng: &mut SmallRng) {
-        let bits = neighborhood_w * neighborhood_h;
+    pub fn set_neighborhood_size(
+        &mut self,
+        neighborhood_w: usize,
+        neighborhood_h: usize,
+        rng: &mut SmallRng,
+    ) {
+        self.neighborhood_w = neighborhood_w;
+        self.neighborhood_h = neighborhood_h;
+        self.randomize(rng);
+    }
+
+    pub fn randomize(&mut self, rng: &mut SmallRng) {
+        let bits = self.neighborhood_w * self.neighborhood_h;
         assert!(
             bits <= MAX_NEIGHBORHOOD_BITS,
             "neighborhood too big for u64 hash"

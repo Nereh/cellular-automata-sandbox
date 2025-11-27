@@ -11,8 +11,6 @@ pub struct Automata {
     grid_w: usize,
     neighborhood_offsets: Vec<(isize, isize)>,
     rules_collection: RulesCollection,
-    neighborhood_w: usize,
-    neighborhood_h: usize,
     spawn_chance: f32,
 }
 
@@ -37,8 +35,8 @@ impl Automata {
 
         let mut rng = SmallRng::from_entropy();
 
-        let mut rules_collection = RulesCollection::new();
-        rules_collection.randomize(neighborhood_w, neighborhood_h, &mut rng);
+        let mut rules_collection = RulesCollection::new(neighborhood_w, neighborhood_h);
+        rules_collection.randomize(&mut rng);
 
         let mut automata = Self {
             rng,
@@ -48,8 +46,6 @@ impl Automata {
             grid_w,
             neighborhood_offsets,
             rules_collection,
-            neighborhood_w,
-            neighborhood_h,
             spawn_chance,
         };
         automata.randomize();
@@ -73,8 +69,7 @@ impl Automata {
     }
 
     pub fn randomize_rules(&mut self) {
-        self.rules_collection
-            .randomize(self.neighborhood_w, self.neighborhood_h, &mut self.rng);
+        self.rules_collection.randomize(&mut self.rng);
     }
 
     pub fn randomize(&mut self) {
@@ -99,6 +94,21 @@ impl Automata {
 
     pub fn set_spawn_chance(&mut self, spawn_chance: f32) {
         self.spawn_chance = spawn_chance.clamp(0.0, 1.0);
+    }
+
+    pub fn set_neighborhood_size(&mut self, neighborhood_w: usize, neighborhood_h: usize) {
+        self.neighborhood_offsets.clear();
+        let start_x = -((neighborhood_w as isize - 1) / 2);
+        let end_x = neighborhood_w as isize / 2;
+        let start_y = -((neighborhood_h as isize - 1) / 2);
+        let end_y = neighborhood_h as isize / 2;
+        for dx in start_x..=end_x {
+            for dy in start_y..=end_y {
+                self.neighborhood_offsets.push((dx, dy));
+            }
+        }
+        self.rules_collection
+            .set_neighborhood_size(neighborhood_w, neighborhood_h, &mut self.rng);
     }
 
     fn get_neighborhood_hash(&mut self, x: usize, y: usize) -> u64 {

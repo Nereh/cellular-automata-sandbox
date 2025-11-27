@@ -10,6 +10,11 @@ Interactive 2D automata sandbox written in Rust using `macroquad`. You can tweak
 cargo run
 ```
 
+## Demo
+<video src="demo.mkv" controls width="640">
+  Your browser does not support the video tag. Download and watch: demo.mkv
+</video>
+
 ## Controls
 - Space: pause/resume stepping
 - Up/Down: speed up / slow down step time
