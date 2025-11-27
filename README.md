@@ -11,10 +11,7 @@ cargo run
 ```
 
 ## Demo
-<video src="https://raw.githubusercontent.com/Nereh/cellular-automata-sandbox/master/media/demo.mp4"
-       controls width="600">
-</video>
-
+https://github.com/user-attachments/assets/cfaaf539-a65e-45a5-9e82-f6aa6ccdc1cf
 
 ## Controls
 - Space: pause/resume stepping
