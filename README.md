@@ -11,7 +11,7 @@ cargo run
 ```
 
 ## Demo
-<video src="demo.mkv" controls width="640">
+<video src="demo.mp4" controls width="640">
   Your browser does not support the video tag. Download and watch: demo.mkv
 </video>
 
