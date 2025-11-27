@@ -11,9 +11,10 @@ cargo run
 ```
 
 ## Demo
-<video src="demo.mp4" controls width="640">
-  Your browser does not support the video tag. Download and watch: demo.mkv
+<video src="https://raw.githubusercontent.com/Nereh/cellular-automata-sandbox/master/media/demo.mp4"
+       controls width="600">
 </video>
+
 
 ## Controls
 - Space: pause/resume stepping
